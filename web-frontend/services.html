@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private Services | Apex National Bank</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="lab-banner">Fictional bank demo for AWS architecture training. Not affiliated with Chase, First Bank, or any real financial institution.</div>
+  <nav class="navbar">
+  <a class="brand" href="index.html"><span class="brand-badge">A</span>Apex National Bank</a>
+  <div class="nav-links">
+    <a href="personal.html">Personal</a>
+    <a href="business.html">Business</a>
+    <a href="cards.html">Cards</a>
+    <a href="loans.html">Loans</a>
+    <a href="security.html">Security</a>
+    <a href="support.html">Support</a>
+    <a class="login" href="staff-portal-placeholder.html">Staff Portal</a>
+  </div>
+</nav>
+  
+<section class="page-header"><h1>Private Banking Services</h1><p>These are the systems a real public banking website depends on but should not expose directly to the internet.</p></section>
+<section class="section">
+<div class="grid-3">
+  <div class="card"><div class="icon">🔑</div><h3>Authentication Service</h3><p>Login, MFA, sessions, password reset, token validation.</p><button class="btn btn-primary" data-endpoint="/api/auth/session" onclick="simulatePrivateApi(this.dataset.endpoint)">Simulate API</button></div>
+  <div class="card"><div class="icon">🏦</div><h3>Account Service</h3><p>Balances, account profile, transaction history, statement metadata.</p><button class="btn btn-primary" data-endpoint="/api/accounts/summary" onclick="simulatePrivateApi(this.dataset.endpoint)">Simulate API</button></div>
+  <div class="card"><div class="icon">💸</div><h3>Transfer Service</h3><p>Payment initiation, ledger checks, transaction status, approval workflow.</p><button class="btn btn-primary" data-endpoint="/api/transfers/risk-check" onclick="simulatePrivateApi(this.dataset.endpoint)">Simulate API</button></div>
+  <div class="card"><div class="icon">🧠</div><h3>Fraud/Risk Service</h3><p>Risk scoring, suspicious activity detection, transaction review.</p></div>
+  <div class="card"><div class="icon">📨</div><h3>Notification Service</h3><p>Email/SMS alerts for login, transfers, and security events.</p><button class="btn btn-primary" data-endpoint="/api/notifications/send" onclick="simulatePrivateApi(this.dataset.endpoint)">Simulate API</button></div>
+  <div class="card"><div class="icon">📊</div><h3>Reporting Service</h3><p>Internal reports, reconciliation, daily operations summary.</p><button class="btn btn-primary" data-endpoint="/api/reports/daily" onclick="simulatePrivateApi(this.dataset.endpoint)">Simulate API</button></div>
+</div>
+<pre id="api-output" class="api-console"></pre>
+</section>
+
+  <footer>
+  <div>© 2026 Apex National Bank Demo — AWS Cloud Engineering Lab</div>
+  <div>ALB • Private App Servers • Private Services • RDS • Redis • S3 • CloudWatch</div>
+</footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture | Apex National Bank</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="lab-banner">Fictional bank demo for AWS architecture training. Not affiliated with Chase, First Bank, or any real financial institution.</div>
+  <nav class="navbar">
+  <a class="brand" href="index.html"><span class="brand-badge">A</span>Apex National Bank</a>
+  <div class="nav-links">
+    <a href="personal.html">Personal</a>
+    <a href="business.html">Business</a>
+    <a href="cards.html">Cards</a>
+    <a href="loans.html">Loans</a>
+    <a href="security.html">Security</a>
+    <a href="support.html">Support</a>
+    <a class="login" href="staff-portal-placeholder.html">Staff Portal</a>
+  </div>
+</nav>
+  
+<section class="page-header"><h1>Realistic AWS Banking Architecture</h1><p>This page maps the production-style cloud architecture you will build gradually in the lab.</p></section>
+<section class="section">
+<table class="table">
+<thead><tr><th>Layer</th><th>Components</th><th>Subnet</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Edge</td><td>Route 53, CloudFront, WAF</td><td>AWS edge/public</td><td>DNS, caching, TLS, filtering, DDoS reduction</td></tr>
+<tr><td>Entry</td><td>Application Load Balancer</td><td>Public subnets A/B</td><td>Only public entry point to the app</td></tr>
+<tr><td>Web/App</td><td>2–4 app servers</td><td>Private app subnets A/B</td><td>High availability and no direct public EC2 access</td></tr>
+<tr><td>Private Services</td><td>Auth, Account, Transfer, Fraud, Notification, Admin, Reporting</td><td>Private service subnets</td><td>Business logic and sensitive workflows</td></tr>
+<tr><td>Data</td><td>RDS primary, standby, read replica, Redis</td><td>Private DB/cache subnets</td><td>Protected source of truth and performance layer</td></tr>
+<tr><td>Storage</td><td>S3 documents, statements, backups</td><td>Private access via IAM/VPC endpoint</td><td>Durable object storage</td></tr>
+<tr><td>Observability</td><td>CloudWatch, CloudTrail, VPC Flow Logs</td><td>Managed services</td><td>Monitoring, audit, incident investigation</td></tr>
+</tbody>
+</table>
+</section>
+
+  <footer>
+  <div>© 2026 Apex National Bank Demo — AWS Cloud Engineering Lab</div>
+  <div>ALB • Private App Servers • Private Services • RDS • Redis • S3 • CloudWatch</div>
+</footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

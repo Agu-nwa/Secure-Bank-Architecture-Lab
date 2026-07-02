@@ -1,0 +1,26 @@
+{
+  "vpc": "10.40.0.0/16",
+  "subnets": {
+    "public-a": "10.40.1.0/24",
+    "public-b": "10.40.2.0/24",
+    "private-app-a": "10.40.11.0/24",
+    "private-app-b": "10.40.12.0/24",
+    "private-services-a": "10.40.31.0/24",
+    "private-services-b": "10.40.32.0/24",
+    "private-db-a": "10.40.21.0/24",
+    "private-db-b": "10.40.22.0/24"
+  },
+  "compute": {
+    "alb": 1,
+    "private_app_servers": 2,
+    "private_service_servers_lab": 1,
+    "services_simulated": 7
+  },
+  "data": [
+    "RDS primary",
+    "RDS standby",
+    "read replica",
+    "Redis",
+    "S3"
+  ]
+}

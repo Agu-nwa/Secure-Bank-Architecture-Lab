@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex National Bank | Enterprise Platform</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="lab-banner">Fictional bank demo for AWS architecture training. Not affiliated with Chase, First Bank, or any real financial institution.</div>
+  <nav class="navbar">
+  <a class="brand" href="index.html"><span class="brand-badge">A</span>Apex National Bank</a>
+  <div class="nav-links">
+    <a href="personal.html">Personal</a>
+    <a href="business.html">Business</a>
+    <a href="cards.html">Cards</a>
+    <a href="loans.html">Loans</a>
+    <a href="security.html">Security</a>
+    <a href="support.html">Support</a>
+    <a class="login" href="staff-portal-placeholder.html">Staff Portal</a>
+  </div>
+</nav>
+  
+<section class="hero">
+  <div>
+    <div class="eyebrow">Production-style banking architecture lab</div>
+    <h1>Enterprise banking platform with private backend services.</h1>
+    <p>This frontend represents the public customer experience. The real banking engine sits behind it: auth, accounts, transfers, fraud/risk, notifications, reports, database, cache, logging, and backups.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="architecture.html">View Architecture</a>
+      <a class="btn btn-outline" href="services.html">Explore Private Services</a>
+    </div>
+  </div>
+  <div class="glass-card">
+    <small>Demo Customer Snapshot</small>
+    <div class="balance">$84,290.18</div>
+    <div class="kpi-grid">
+      <div class="kpi"><small>Auth</small><strong>Private</strong></div>
+      <div class="kpi"><small>Fraud</small><strong>Active</strong></div>
+      <div class="kpi"><small>Database</small><strong>RDS</strong></div>
+      <div class="kpi"><small>Cache</small><strong>Redis</strong></div>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-title">
+    <span class="eyebrow">What the user sees</span>
+    <h2>Many public pages. Private systems behind them.</h2>
+    <p>A bank may expose many customer pages, but balances, transfers, KYC, fraud review, and reporting should be handled by private services.</p>
+  </div>
+  <div class="grid-4">
+    <div class="card"><div class="icon">👤</div><h3>Personal Banking</h3><p>Checking, savings, transfers, statements, and profile workflows.</p></div>
+    <div class="card"><div class="icon">🏢</div><h3>Business Banking</h3><p>Payroll, treasury, approvals, supplier payments, and audit exports.</p></div>
+    <div class="card"><div class="icon">💳</div><h3>Cards</h3><p>Card controls, disputes, limits, fraud flags, and card replacement.</p></div>
+    <div class="card"><div class="icon">🛡️</div><h3>Risk & Security</h3><p>MFA, session control, fraud checks, logs, and compliance evidence.</p></div>
+  </div>
+</section>
+<section class="arch-band">
+  <div>
+    <h2>The frontend is public. The banking engine is private.</h2>
+    <p>In a realistic AWS design, users reach an ALB. The ALB routes to private app servers. Those app servers call private services and private databases. Customers never directly reach the backend.</p>
+  </div>
+  <div class="flow-panel">
+    <h3>Request flow</h3>
+    <div class="flow-row">1. Customer → Route 53 → CloudFront/WAF → ALB</div>
+    <div class="flow-row">2. ALB → Private web/app servers</div>
+    <div class="flow-row">3. App servers → Auth, Account, Transfer, Fraud services</div>
+    <div class="flow-row">4. Services → RDS, Redis, S3, CloudWatch</div>
+  </div>
+</section>
+
+  <footer>
+  <div>© 2026 Apex National Bank Demo — AWS Cloud Engineering Lab</div>
+  <div>ALB • Private App Servers • Private Services • RDS • Redis • S3 • CloudWatch</div>
+</footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

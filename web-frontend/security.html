@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security | Apex National Bank</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="lab-banner">Fictional bank demo for AWS architecture training. Not affiliated with Chase, First Bank, or any real financial institution.</div>
+  <nav class="navbar">
+  <a class="brand" href="index.html"><span class="brand-badge">A</span>Apex National Bank</a>
+  <div class="nav-links">
+    <a href="personal.html">Personal</a>
+    <a href="business.html">Business</a>
+    <a href="cards.html">Cards</a>
+    <a href="loans.html">Loans</a>
+    <a href="security.html">Security</a>
+    <a href="support.html">Support</a>
+    <a class="login" href="staff-portal-placeholder.html">Staff Portal</a>
+  </div>
+</nav>
+  
+<section class="page-header"><h1>Security Model</h1><p>Security groups, private routing, IAM, encryption, logs, and monitoring define the control plane.</p></section>
+<section class="section"><div class="grid-3">
+<div class="card"><div class="icon">🌐</div><h3>Public Entry</h3><p>Only CloudFront/WAF/ALB should be public-facing. EC2 app servers stay private.</p><ul><li>443 from Internet to ALB</li><li>ALB to app SG only</li></ul></div>
+<div class="card"><div class="icon">🔒</div><h3>Private Services</h3><p>Service-to-service traffic is restricted by security groups and private IP routing.</p><ul><li>App SG to service SG</li><li>Service SG to DB SG</li></ul></div>
+<div class="card"><div class="icon">🧾</div><h3>Audit</h3><p>CloudTrail, CloudWatch Logs, VPC Flow Logs, and alarms support investigations.</p></div>
+</div></section>
+
+  <footer>
+  <div>© 2026 Apex National Bank Demo — AWS Cloud Engineering Lab</div>
+  <div>ALB • Private App Servers • Private Services • RDS • Redis • S3 • CloudWatch</div>
+</footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

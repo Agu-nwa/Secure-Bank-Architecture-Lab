@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cards | Apex National Bank</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="lab-banner">Fictional bank demo for AWS architecture training. Not affiliated with Chase, First Bank, or any real financial institution.</div>
+  <nav class="navbar">
+  <a class="brand" href="index.html"><span class="brand-badge">A</span>Apex National Bank</a>
+  <div class="nav-links">
+    <a href="personal.html">Personal</a>
+    <a href="business.html">Business</a>
+    <a href="cards.html">Cards</a>
+    <a href="loans.html">Loans</a>
+    <a href="security.html">Security</a>
+    <a href="support.html">Support</a>
+    <a class="login" href="staff-portal-placeholder.html">Staff Portal</a>
+  </div>
+</nav>
+  
+<section class="page-header"><h1>Cards & Payments</h1><p>Card operations require fraud checks, customer alerts, and private processing services.</p></section>
+<section class="section"><table class="table"><thead><tr><th>Feature</th><th>Public Page</th><th>Private Dependency</th><th>Status</th></tr></thead><tbody>
+<tr><td>Freeze Card</td><td>Cards UI</td><td>Auth + Card Control API</td><td><span class="badge green">Private Service</span></td></tr>
+<tr><td>Dispute Transaction</td><td>Support UI</td><td>Case Management + Fraud API</td><td><span class="badge green">Private Service</span></td></tr>
+<tr><td>Set Limit</td><td>Cards UI</td><td>Risk + Account Service</td><td><span class="badge green">Private Service</span></td></tr>
+</tbody></table></section>
+
+  <footer>
+  <div>© 2026 Apex National Bank Demo — AWS Cloud Engineering Lab</div>
+  <div>ALB • Private App Servers • Private Services • RDS • Redis • S3 • CloudWatch</div>
+</footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
