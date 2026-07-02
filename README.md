@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Realistic Bank Architecture Lab
 
 A fictional enterprise banking platform for AWS Cloud Engineering practice.
@@ -64,3 +65,6 @@ Internet
 ## Important Note
 
 This is a fictional training project. It does not copy any real bank and does not process real banking data.
+=======
+# Secure-Bank-Architecture-Lab
+>>>>>>> 4daa09ae4534e4156180a4f770e03c92ac28cae2
