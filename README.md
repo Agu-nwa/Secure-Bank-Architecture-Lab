@@ -381,3 +381,374 @@ Security Group: bank-db-sg
 
 ---
 
+Phase 4: Launch Private EC2 Servers with AWS Systems Manager Access
+Objective
+The objective of Phase 4 was to launch private EC2 instances for the enterprise banking architecture without exposing them to the public internet.
+This phase focused on creating:
+- Private application servers
+- Private banking services server
+- No public IPv4 addresses
+- No SSH access
+- Secure access through AWS Systems Manager Session Manager
+
+Architecture Goal
+The target architecture for this phase is:
+Internet
+   ↓
+Application Load Balancer
+   ↓
+Private App Server A
+Private App Server B
+   ↓
+Private Services Server
+The EC2 instances are not directly accessible from the internet.
+Administrative access is handled through:
+AWS Systems Manager Session Manager
+
+EC2 Instances Created
+1. Private App Server
+Instance Name: app server
+Instance Type: t3.micro
+Operating System: Amazon Linux
+Private IPv4 Address: 10.40.12.134
+Public IPv4 Address: None
+Public DNS: None
+IAM Role: bank-ssm
+SSM Status: Online
+Purpose
+This server represents one of the private application servers that will host the customer-facing bank frontend behind an Application Load Balancer.
+It is private because customers should not access the EC2 instance directly.
+Correct access pattern:
+Customer
+   ↓
+Application Load Balancer
+   ↓
+Private App Server
+
+2. Private App Server 2
+Instance Name: app server 2
+Instance Type: t3.micro
+Operating System: Amazon Linux
+Private IPv4 Address: 10.40.12.176
+Public IPv4 Address: None
+Public DNS: None
+IAM Role: bank-ssm
+SSM Status: Online
+Purpose
+This server represents the second private application server for availability and load balancing.
+In a production-style design, the two app servers should be placed in different Availability Zones.
+Recommended placement:
+App Server A → Private App Subnet A → 10.40.11.0/24
+App Server B → Private App Subnet B → 10.40.12.0/24
+This improves availability because the application is not dependent on only one subnet or Availability Zone.
+
+3. Private Services Server
+Instance Name: Services Server
+Instance ID: i-002756af7e9f32d94
+Instance Type: t3.micro
+Operating System: Amazon Linux
+Private IPv4 Address: 10.40.32.106
+Public IPv4 Address: None
+Public DNS: None
+Subnet: bank-pri-services
+IAM Role: bank-ssm
+SSM Status: Online
+Purpose
+The services server represents the private banking services layer.
+This server will later run backend services such as:
+auth_service.py
+account_service.py
+transfer_service.py
+fraud_risk_service.py
+notification_service.py
+admin_service.py
+reporting_service.py
+These services simulate real banking backend systems such as authentication, account lookup, transfers, fraud checks, notifications, admin workflows, and reporting.
+
+Systems Manager Access Validation
+The EC2 instances appeared successfully in AWS Systems Manager Fleet Manager.
+Managed Nodes: 3
+Ping Status: Online
+Platform: Linux
+Agent Version: 3.3.4624.0
+This confirms that the private EC2 instances can communicate with AWS Systems Manager through the configured VPC Interface Endpoints.
+
+Session Manager Test
+A Session Manager terminal session was started successfully into the private services server.
+The following command was executed:
+hostname
+Command Explanation
+hostname = prints the internal Linux hostname of the server
+Output:
+ip-10-40-32-106.eu-north-1.compute.internal
+This confirms that the terminal session is connected to the private services server.
+
+Network Interface Test
+The following command was executed:
+ip addr
+Command Explanation
+ip = Linux networking command
+addr = displays IP addresses assigned to the server
+Output confirmed the private IP address:
+10.40.32.106/24
+This shows that the services server is running inside the private services subnet.
+
+SSM Connectivity Test
+The following command was executed:
+curl https://ssm.eu-north-1.amazonaws.com
+Command Explanation
+curl = sends a web request from the terminal
+https://ssm.eu-north-1.amazonaws.com = AWS Systems Manager regional endpoint
+Output:
+ValidationError
+This result is acceptable.
+It means the instance reached the SSM endpoint successfully, but the request was not a valid signed AWS API request.
+The important part is that the command did not timeout.
+
+Security Design
+No SSH rule was required.
+No public IP address was assigned.
+No PEM key was required.
+The access model is:
+AWS Console
+   ↓
+Systems Manager Session Manager
+   ↓
+VPC Interface Endpoints
+   ↓
+
+## ⚙️: Deploy Private Banking Services Using S3 and SSM
+
+### Command
+```bash
+aws --version
+aws-cli/2.33.15 Python/3.9.25 Linux/6.18.35-68.129.amzn2023.x86_64 source/x86_64.amzn.2023
+sh-5.2$ aws s3 ls s3://bank-enterprise-lab-961743401735-eu-north-1/artifacts/ --region eu-north-1
+2026-07-02 15:58:23      25061 realistic_bank_architecture_lab.zip
+sh-5.2$ mkdir -p ~/bank-lab
+sh-5.2$ aws s3 cp s3://bank-enterprise-lab-961743401735-eu-north-1/artifacts/realistic_bank_architecture_lab.zip ~/bank-lab/ --region eu-north-1
+download: s3://bank-enterprise-lab-961743401735-eu-north-1/artifacts/realistic_bank_architecture_lab.zip to ../../home/ssm-user/bank-lab/realistic_bank_architecture_lab.zip
+sh-5.2$ cd ~/bank-lab
+unzip realistic_bank_architecture_lab.zip
+Archive:  realistic_bank_architecture_lab.zip
+replace web-frontend/staff-portal-placeholder.html? [y]es, [n]o, [A]ll, [N]one, [r]ename: y
+  inflating: web-frontend/staff-portal-placeholder.html
+replace web-frontend/index.html? [y]es, [n]o, [A]ll, [N]one, [r]ename: yes
+  inflating: web-frontend/index.html
+replace web-frontend/personal.html? [y]es, [n]o, [A]ll, [N]one, [r]ename: y
+  inflating: web-frontend/personal.html
+replace web-frontend/support.html? [y]es, [n]o, [A]ll, [N]one, [r]ename: A
+  inflating: web-frontend/support.html
+  inflating: web-frontend/architecture.html
+  inflating: web-frontend/cards.html
+  inflating: web-frontend/security.html
+  inflating: web-frontend/loans.html
+  inflating: web-frontend/business.html
+  inflating: web-frontend/services.html
+  inflating: web-frontend/assets/css/styles.css
+  inflating: web-frontend/assets/js/app.js
+  inflating: private-services/auth_service.py
+  inflating: private-services/fraud_risk_service.py
+  inflating: private-services/notification_service.py
+  inflating: private-services/account_service.py
+  inflating: private-services/transfer_service.py
+  inflating: private-services/reporting_service.py
+  inflating: private-services/admin_service.py
+  inflating: private-services/run_all_services.sh
+  inflating: docs/ARCHITECTURE.md
+  inflating: docs/DEPLOYMENT.md
+  inflating: README.md
+sh-5.2$ cd private-services
+sh-5.2$ chmod +x run_all_services.sh
+sh-5.2$ chmod +x run_all_services.sh
+sh-5.2$ ./run_all_services.sh
+Started demo private services on ports 8101-8107
+sh-5.2$ ss -tulnp
+Netid     State      Recv-Q      Send-Q                             Local Address:Port           Peer Address:Port     Process
+udp       UNCONN     0           0                                      127.0.0.1:323                 0.0.0.0:*
+udp       UNCONN     0           0                              10.40.32.106%ens5:68                  0.0.0.0:*
+udp       UNCONN     0           0                                          [::1]:323                    [::]:*
+udp       UNCONN     0           0                [fe80::46f:37ff:fe13:4979]%ens5:546                    [::]:*
+tcp       LISTEN     0           128                                      0.0.0.0:22                  0.0.0.0:*
+tcp       LISTEN     0           5                                        0.0.0.0:8107                0.0.0.0:*         users:(("python3",pid=8758,fd=3))
+tcp       LISTEN     0           5                                        0.0.0.0:8106                0.0.0.0:*         users:(("python3",pid=8757,fd=3))
+tcp       LISTEN     0           5                                        0.0.0.0:8105                0.0.0.0:*         users:(("python3",pid=8756,fd=3))
+tcp       LISTEN     0           5                                        0.0.0.0:8104                0.0.0.0:*         users:(("python3",pid=8755,fd=3))
+tcp       LISTEN     0           5                                        0.0.0.0:8103                0.0.0.0:*         users:(("python3",pid=8754,fd=3))
+tcp       LISTEN     0           5                                        0.0.0.0:8102                0.0.0.0:*         users:(("python3",pid=8753,fd=3))
+tcp       LISTEN     0           5                                        0.0.0.0:8101                0.0.0.0:*         users:(("python3",pid=8752,fd=3))
+tcp       LISTEN     0           128                                         [::]:22                     [::]:*
+sh-5.2$ curl http://localhost:8101/api/status
+{
+  "service": "auth-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:06:50.423960+00:00"
+}sh-5.2$curl http://localhost:8102/api/demoo
+{
+  "service": "account-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:07:05.426928+00:00",
+  "demo": "Handles balances, profile data, account summaries, and transaction lookups.",
+  "note": "Training data only. No real banking data."
+}sh-5.2$sudo dnf install -y httpdd
+Amazon Linux 2023 repository                                                                                                   69 MB/s |  69 MB     00:00
+Amazon Linux 2023 Kernel Livepatch repository                                                                                 409 kB/s |  55 kB     00:00
+Dependencies resolved.
+==============================================================================================================================================================
+ Package                                   Architecture                 Version                                       Repository                         Size
+==============================================================================================================================================================
+Installing:
+ httpd                                     x86_64                       2.4.68-1.amzn2023.0.1                         amazonlinux                        46 k
+Installing dependencies:
+ apr                                       x86_64                       1.7.5-1.amzn2023.0.4                          amazonlinux                       129 k
+ apr-util                                  x86_64                       1.6.3-1.amzn2023.0.2                          amazonlinux                        97 k
+ apr-util-lmdb                             x86_64                       1.6.3-1.amzn2023.0.2                          amazonlinux                        13 k
+ generic-logos-httpd                       noarch                       18.0.0-12.amzn2023.0.3                        amazonlinux                        19 k
+ httpd-core                                x86_64                       2.4.68-1.amzn2023.0.1                         amazonlinux                       1.4 M
+ httpd-filesystem                          noarch                       2.4.68-1.amzn2023.0.1                         amazonlinux                        12 k
+ httpd-tools                               x86_64                       2.4.68-1.amzn2023.0.1                         amazonlinux                        80 k
+ libbrotli                                 x86_64                       1.0.9-4.amzn2023.0.2                          amazonlinux                       315 k
+ mailcap                                   noarch                       2.1.49-3.amzn2023.0.3                         amazonlinux                        33 k
+Installing weak dependencies:
+ apr-util-openssl                          x86_64                       1.6.3-1.amzn2023.0.2                          amazonlinux                        15 k
+ mod_http2                                 x86_64                       2.0.42-1.amzn2023.0.1                         amazonlinux                       167 k
+ mod_lua                                   x86_64                       2.4.68-1.amzn2023.0.1                         amazonlinux                        59 k
+
+Transaction Summary
+==============================================================================================================================================================
+Install  13 Packages
+
+Total download size: 2.4 M
+Installed size: 7.0 M
+Downloading Packages:
+(1/13): apr-1.7.5-1.amzn2023.0.4.x86_64.rpm                                                                                   2.8 MB/s | 129 kB     00:00
+(2/13): apr-util-1.6.3-1.amzn2023.0.2.x86_64.rpm                                                                              2.0 MB/s |  97 kB     00:00
+(3/13): apr-util-lmdb-1.6.3-1.amzn2023.0.2.x86_64.rpm                                                                         264 kB/s |  13 kB     00:00
+(4/13): apr-util-openssl-1.6.3-1.amzn2023.0.2.x86_64.rpm                                                                      556 kB/s |  15 kB     00:00
+(5/13): generic-logos-httpd-18.0.0-12.amzn2023.0.3.noarch.rpm                                                                 757 kB/s |  19 kB     00:00
+(6/13): httpd-2.4.68-1.amzn2023.0.1.x86_64.rpm                                                                                1.6 MB/s |  46 kB     00:00
+(7/13): httpd-core-2.4.68-1.amzn2023.0.1.x86_64.rpm                                                                            37 MB/s | 1.4 MB     00:00
+(8/13): httpd-filesystem-2.4.68-1.amzn2023.0.1.noarch.rpm                                                                     317 kB/s |  12 kB     00:00
+(9/13): httpd-tools-2.4.68-1.amzn2023.0.1.x86_64.rpm                                                                          2.1 MB/s |  80 kB     00:00
+(10/13): libbrotli-1.0.9-4.amzn2023.0.2.x86_64.rpm                                                                             10 MB/s | 315 kB     00:00
+(11/13): mod_http2-2.0.42-1.amzn2023.0.1.x86_64.rpm                                                                           5.6 MB/s | 167 kB     00:00
+(12/13): mailcap-2.1.49-3.amzn2023.0.3.noarch.rpm                                                                             1.0 MB/s |  33 kB     00:00
+(13/13): mod_lua-2.4.68-1.amzn2023.0.1.x86_64.rpm                                                                             2.1 MB/s |  59 kB     00:00
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                          11 MB/s | 2.4 MB     00:00
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                      1/1
+  Installing       : apr-1.7.5-1.amzn2023.0.4.x86_64                                                                                                     1/13
+  Installing       : apr-util-lmdb-1.6.3-1.amzn2023.0.2.x86_64                                                                                           2/13
+  Installing       : apr-util-openssl-1.6.3-1.amzn2023.0.2.x86_64                                                                                        3/13
+  Installing       : apr-util-1.6.3-1.amzn2023.0.2.x86_64                                                                                                4/13
+  Installing       : mailcap-2.1.49-3.amzn2023.0.3.noarch                                                                                                5/13
+  Installing       : httpd-tools-2.4.68-1.amzn2023.0.1.x86_64                                                                                            6/13
+  Installing       : libbrotli-1.0.9-4.amzn2023.0.2.x86_64                                                                                               7/13
+  Running scriptlet: httpd-filesystem-2.4.68-1.amzn2023.0.1.noarch                                                                                       8/13
+  Installing       : httpd-filesystem-2.4.68-1.amzn2023.0.1.noarch                                                                                       8/13
+  Installing       : httpd-core-2.4.68-1.amzn2023.0.1.x86_64                                                                                             9/13
+  Installing       : mod_http2-2.0.42-1.amzn2023.0.1.x86_64                                                                                             10/13
+  Installing       : mod_lua-2.4.68-1.amzn2023.0.1.x86_64                                                                                               11/13
+  Installing       : generic-logos-httpd-18.0.0-12.amzn2023.0.3.noarch                                                                                  12/13
+  Installing       : httpd-2.4.68-1.amzn2023.0.1.x86_64                                                                                                 13/13
+  Running scriptlet: httpd-2.4.68-1.amzn2023.0.1.x86_64                                                                                                 13/13
+  Verifying        : apr-1.7.5-1.amzn2023.0.4.x86_64                                                                                                     1/13
+  Verifying        : apr-util-1.6.3-1.amzn2023.0.2.x86_64                                                                                                2/13
+  Verifying        : apr-util-lmdb-1.6.3-1.amzn2023.0.2.x86_64                                                                                           3/13
+  Verifying        : apr-util-openssl-1.6.3-1.amzn2023.0.2.x86_64                                                                                        4/13
+  Verifying        : generic-logos-httpd-18.0.0-12.amzn2023.0.3.noarch                                                                                   5/13
+  Verifying        : httpd-2.4.68-1.amzn2023.0.1.x86_64                                                                                                  6/13
+  Verifying        : httpd-core-2.4.68-1.amzn2023.0.1.x86_64                                                                                             7/13
+  Verifying        : httpd-filesystem-2.4.68-1.amzn2023.0.1.noarch                                                                                       8/13
+  Verifying        : httpd-tools-2.4.68-1.amzn2023.0.1.x86_64                                                                                            9/13
+  Verifying        : libbrotli-1.0.9-4.amzn2023.0.2.x86_64                                                                                              10/13
+  Verifying        : mailcap-2.1.49-3.amzn2023.0.3.noarch                                                                                               11/13
+  Verifying        : mod_http2-2.0.42-1.amzn2023.0.1.x86_64                                                                                             12/13
+  Verifying        : mod_lua-2.4.68-1.amzn2023.0.1.x86_64                                                                                               13/13
+
+Installed:
+  apr-1.7.5-1.amzn2023.0.4.x86_64                    apr-util-1.6.3-1.amzn2023.0.2.x86_64                    apr-util-lmdb-1.6.3-1.amzn2023.0.2.x86_64
+  apr-util-openssl-1.6.3-1.amzn2023.0.2.x86_64       generic-logos-httpd-18.0.0-12.amzn2023.0.3.noarch       httpd-2.4.68-1.amzn2023.0.1.x86_64
+  httpd-core-2.4.68-1.amzn2023.0.1.x86_64            httpd-filesystem-2.4.68-1.amzn2023.0.1.noarch           httpd-tools-2.4.68-1.amzn2023.0.1.x86_64
+  libbrotli-1.0.9-4.amzn2023.0.2.x86_64              mailcap-2.1.49-3.amzn2023.0.3.noarch                    mod_http2-2.0.42-1.amzn2023.0.1.x86_64
+  mod_lua-2.4.68-1.amzn2023.0.1.x86_64
+
+Complete!
+sh-5.2$ aws s3 ls s3://bank-enterprise-lab-961743401735-eu-north-1/artifacts/ --region eu-north-1
+2026-07-02 15:58:23      25061 realistic_bank_architecture_lab.zip
+sh-5.2$ curl http://localhost:8101/api/status
+{
+  "service": "auth-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:09:13.118811+00:00"
+}sh-5.2$curl http://localhost:8102/api/statuss
+curl http://localhost:8103/api/status
+curl http://localhost:8104/api/status
+curl http://localhost:8105/api/status
+curl http://localhost:8106/api/status
+curl http://localhost:8107/api/status
+{
+  "service": "account-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:12:32.955074+00:00"
+}{
+  "service": "transfer-payment-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:12:32.961776+00:00"
+}{
+  "service": "fraud-risk-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:12:32.967655+00:00"
+}{
+  "service": "notification-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:12:32.973447+00:00"
+}{
+  "service": "admin-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:12:32.979162+00:00"
+}{
+  "service": "reporting-service",
+  "status": "healthy",
+  "hostname": "ip-10-40-32-106.eu-north-1.compute.internal",
+  "private_subnet": true,
+  "publicly_exposed": false,
+  "timestamp": "2026-07-02T16:12:32.984819+00:00"
+}sh-5.2$ss -tulnp | grep 8100
+tcp   LISTEN 0      5                              0.0.0.0:8107      0.0.0.0:*    users:(("python3",pid=8758,fd=3))
+tcp   LISTEN 0      5                              0.0.0.0:8106      0.0.0.0:*    users:(("python3",pid=8757,fd=3))
+tcp   LISTEN 0      5                              0.0.0.0:8105      0.0.0.0:*    users:(("python3",pid=8756,fd=3))
+tcp   LISTEN 0      5                              0.0.0.0:8104      0.0.0.0:*    users:(("python3",pid=8755,fd=3))
+tcp   LISTEN 0      5                              0.0.0.0:8103      0.0.0.0:*    users:(("python3",pid=8754,fd=3))
+tcp   LISTEN 0      5                              0.0.0.0:8102      0.0.0.0:*    users:(("python3",pid=8753,fd=3))
+tcp   LISTEN 0      5                              0.0.0.0:8101      0.0.0.0:*    users:(("python3",pid=8752,fd=3))
+sh-5.2$
