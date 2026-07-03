@@ -922,6 +922,7 @@ sh-5.2$
 
 # Phase 7: Application Load Balancer
 
+
 # Phase 8: RDS
 
 ## ⚙️: Create RDS, Connect and Confirm
@@ -978,7 +979,8 @@ sh-5.2$ export RDSHOST="bank2.c9ami8u8q1sg.eu-north-1.rds.amazonaws.com"
 psql "host=$RDSHOST port=5432 dbname=bankdb user=bankadmin sslmode=verify-full sslrootcert=./global-bundle.pem"
 psql: error: connection to server at "bank2.c9ami8u8q1sg.eu-north-1.rds.amazonaws.com" (10.40.10.194), port 5432 failed: root certificate file "./global-bundle.pem" does not exist
 Either provide the file or change sslmode to disable server certificate verification.
-sh-5.2$ psql "host=$RDSHOST port=5432 dbname=bankdb user=bankadmin sslmode=require"
+sh-5.2$ export RDSHOST="bank2.c9ami8u8q1sg.eu-north-1.rds.amazonaws.com"
+psql "host=$RDSHOST port=5432 dbname=bankdb user=bankadmin sslmode=require"
 Password for user bankadmin:
 psql (15.18, server 18.3)
 WARNING: psql major version 15, server major version 18.
@@ -986,30 +988,7 @@ WARNING: psql major version 15, server major version 18.
 SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
 Type "help" for help.
 
-bankdb=> SELECT version();
-                                                   version
---------------------------------------------------------------------------------------------------------------
- PostgreSQL 18.3 on aarch64-unknown-linux-gnu, compiled by aarch64-unknown-linux-gnu-gcc (GCC) 12.4.0, 64-bit
-(1 row)
-
-bankdb=> CREATE TABLE bank_health_check (
-    id SERIAL PRIMARY KEY,
-    service_name VARCHAR(100),
-    status VARCHAR(50),
-    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE
-bankdb=> INSERT INTO bank_health_check (service_name, status)
-VALUES ('rds-private-connectivity', 'successful');
-INSERT 0 1
-bankdb=> SELECT * FROM bank_health_check;
- id |       service_name       |   status   |         checked_at
-----+--------------------------+------------+----------------------------
-  1 | rds-private-connectivity | successful | 2026-07-03 11:57:53.908071
-(1 row)
-
-bankdb=> psql "host=$RDSHOST port=5432 dbname=bankdb user=bankadmin sslmode=require"
-bankdb-> CREATE TABLE customers (
+bankdb=> CREATE TABLE IF NOT EXISTS customers (
     customer_id SERIAL PRIMARY KEY,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
@@ -1018,7 +997,7 @@ bankdb-> CREATE TABLE customers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
     account_id SERIAL PRIMARY KEY,
     customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
     account_number VARCHAR(20) UNIQUE NOT NULL,
@@ -1029,7 +1008,7 @@ CREATE TABLE accounts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     transaction_id SERIAL PRIMARY KEY,
     account_id INTEGER NOT NULL REFERENCES accounts(account_id),
     transaction_type VARCHAR(50) NOT NULL,
@@ -1039,7 +1018,7 @@ CREATE TABLE transactions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE fraud_alerts (
+CREATE TABLE IF NOT EXISTS fraud_alerts (
     alert_id SERIAL PRIMARY KEY,
     transaction_id INTEGER REFERENCES transactions(transaction_id),
     risk_score INTEGER NOT NULL,
@@ -1047,31 +1026,35 @@ CREATE TABLE fraud_alerts (
     reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE TABLE audit_logs (
-    log_id SERIAL PRIMARY KEY,
-    actor VARCHAR(100) NOT NULL,
-    action VARCHAR(150) NOT NULL,
-    resource VARCHAR(150),
-);  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-ERROR:  syntax error at or near "psql"
-LINE 1: psql "host=$RDSHOST port=5432 dbname=bankdb user=bankadmin s...
-        ^
-ERROR:  relation "customers" does not exist
-ERROR:  relation "accounts" does not exist
-ERROR:  relation "transactions" does not exist
 CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+bankdb=> \dt
+               List of relations
+ Schema |       Name        | Type  |   Owner
+--------+-------------------+-------+-----------
+ public | accounts          | table | bankadmin
+ public | audit_logs        | table | bankadmin
+ public | bank_health_check | table | bankadmin
+ public | customers         | table | bankadmin
+ public | fraud_alerts      | table | bankadmin
+ public | transactions      | table | bankadmin
+(6 rows)
+
 bankdb=> INSERT INTO customers (full_name, email, phone, kyc_status)
 VALUES
 ('Amara Okafor', 'amara.okafor@example.com', '+2348011111111', 'verified'),
 ('David Johnson', 'david.johnson@example.com', '+2348022222222', 'verified'),
-('Sarah Williams', 'sarah.williams@example.com', '+2348033333333', 'pending');
+('Sarah Williams', 'sarah.williams@example.com', '+2348033333333', 'pending')
+ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO accounts (customer_id, account_number, account_type, currency, balance)
 VALUES
 (1, '1002003001', 'savings', 'USD', 84290.18),
 (2, '1002003002', 'current', 'USD', 12500.00),
-(3, '1002003003', 'savings', 'USD', 980.50);
+(3, '1002003003', 'savings', 'USD', 980.50)
+ON CONFLICT (account_number) DO NOTHING;
 
 INSERT INTO transactions (account_id, transaction_type, amount, status, description)
 VALUES
@@ -1082,36 +1065,40 @@ VALUES
 INSERT INTO fraud_alerts (transaction_id, risk_score, alert_status, reason)
 VALUES
 (2, 82, 'open', 'Transfer amount and destination triggered risk rule');
-
-INSERT INTO audit_logs (actor, action, resource, ip_address)
-VALUES
-('auth-service', 'customer-login', 'customer:1', '10.40.32.106'),
-('transfer-service', 'transfer-created', 'transaction:2', '10.40.32.106'),
-('fraud-risk-service', 'fraud-alert-created', 'alert:1', '10.40.32.106');
-ERROR:  relation "customers" does not exist
-LINE 1: INSERT INTO customers (full_name, email, phone, kyc_status)
-                    ^
-ERROR:  relation "accounts" does not exist
-LINE 1: INSERT INTO accounts (customer_id, account_number, account_t...
-                    ^
-ERROR:  relation "transactions" does not exist
-LINE 1: INSERT INTO transactions (account_id, transaction_type, amou...
-                    ^
-ERROR:  relation "fraud_alerts" does not exist
-LINE 1: INSERT INTO fraud_alerts (transaction_id, risk_score, alert_...
-                    ^
 INSERT 0 3
-bankdb=> \dt
-               List of relations
- Schema |       Name        | Type  |   Owner
---------+-------------------+-------+-----------
- public | audit_logs        | table | bankadmin
- public | bank_health_check | table | bankadmin
-(2 rows)
+INSERT 0 3
+INSERT 0 3
+INSERT 0 1
+bankdb=> SELECT * FROM customers;
+ customer_id |   full_name    |           email            |     phone      | kyc_status |         created_at
+-------------+----------------+----------------------------+----------------+------------+----------------------------
+           1 | Amara Okafor   | amara.okafor@example.com   | +2348011111111 | verified   | 2026-07-03 12:15:55.434666
+           2 | David Johnson  | david.johnson@example.com  | +2348022222222 | verified   | 2026-07-03 12:15:55.434666
+           3 | Sarah Williams | sarah.williams@example.com | +2348033333333 | pending    | 2026-07-03 12:15:55.434666
+(3 rows)
 
-bankdb=> \dt = list database tables
-Did not find any relation named "=".
-\dt: extra argument "list" ignored
-\dt: extra argument "database" ignored
-\dt: extra argument "tables" ignored
-bankdb=>
+bankdb=> SELECT * FROM accounts;
+ account_id | customer_id | account_number | account_type | currency | balance  | status |         created_at
+------------+-------------+----------------+--------------+----------+----------+--------+----------------------------
+          1 |           1 | 1002003001     | savings      | USD      | 84290.18 | active | 2026-07-03 12:15:55.438257
+          2 |           2 | 1002003002     | current      | USD      | 12500.00 | active | 2026-07-03 12:15:55.438257
+          3 |           3 | 1002003003     | savings      | USD      |   980.50 | active | 2026-07-03 12:15:55.438257
+(3 rows)
+
+bankdb=> SELECT
+    c.full_name,
+    a.account_number,
+    a.account_type,
+    a.balance,
+    a.status
+FROM customers c
+JOIN accounts a ON c.customer_id = a.customer_id;
+   full_name    | account_number | account_type | balance  | status
+----------------+----------------+--------------+----------+--------
+ Amara Okafor   | 1002003001     | savings      | 84290.18 | active
+ David Johnson  | 1002003002     | current      | 12500.00 | active
+ Sarah Williams | 1002003003     | savings      |   980.50 | active
+(3 rows)
+
+bankdb=> \q
+sh-5.2$
