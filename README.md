@@ -1102,3 +1102,195 @@ JOIN accounts a ON c.customer_id = a.customer_id;
 
 bankdb=> \q
 sh-5.2$
+
+## ⚙️: Connect Backend to RDS
+
+### Command
+```bash
+cd ~/bank-lab/private-services
+sh-5.2$ ls
+account.log         admin_service.py  fraud.log              notification_service.py  run_all_services.sh
+account_service.py  auth.log          fraud_risk_service.py  reporting.log            transfer.log
+admin.log           auth_service.py   notification.log       reporting_service.py     transfer_service.py
+sh-5.2$ sudo dnf install -y python3-psycopg2
+Last metadata expiration check: 20:40:58 ago on Thu Jul  2 16:07:45 2026.
+Dependencies resolved.
+==============================================================================================================================================================
+ Package                                 Architecture                  Version                                       Repository                          Size
+==============================================================================================================================================================
+Installing:
+ python3-psycopg2                        x86_64                        2.9.10-8.amzn2023.0.1                         amazonlinux                        191 k
+Installing dependencies:
+ libpq                                   x86_64                        18.4-1.amzn2023.0.1                           amazonlinux                        293 k
+
+Transaction Summary
+==============================================================================================================================================================
+Install  2 Packages
+
+Total download size: 484 k
+Installed size: 1.9 M
+Downloading Packages:
+(1/2): libpq-18.4-1.amzn2023.0.1.x86_64.rpm                                                                                   2.6 MB/s | 293 kB     00:00
+(2/2): python3-psycopg2-2.9.10-8.amzn2023.0.1.x86_64.rpm                                                                      1.7 MB/s | 191 kB     00:00
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                         3.1 MB/s | 484 kB     00:00
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                      1/1
+  Installing       : libpq-18.4-1.amzn2023.0.1.x86_64                                                                                                     1/2
+  Installing       : python3-psycopg2-2.9.10-8.amzn2023.0.1.x86_64                                                                                        2/2
+  Running scriptlet: python3-psycopg2-2.9.10-8.amzn2023.0.1.x86_64                                                                                        2/2
+  Verifying        : libpq-18.4-1.amzn2023.0.1.x86_64                                                                                                     1/2
+  Verifying        : python3-psycopg2-2.9.10-8.amzn2023.0.1.x86_64                                                                                        2/2
+
+Installed:
+  libpq-18.4-1.amzn2023.0.1.x86_64                                        python3-psycopg2-2.9.10-8.amzn2023.0.1.x86_64
+
+Complete!
+sh-5.2$
+
+## ⚙️: Backup
+
+### Command
+```bash
+cp account_service.py account_service.py.bak
+sh-5.2$
+
+# Phase 12: Create an App Gateway on the Private App Server
+
+### Command
+```bash
+sh-5.2$ cd ~/bank-lab
+sh-5.2$ ls
+README.md  docs  private-services  realistic_bank_architecture_lab.zip  web-frontend
+sh-5.2$ sudo pkill -f "python3 -m http.server 80" || true
+sh-5.2$ cat > app_gateway.py <<'PY'
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+import os
+import json
+
+WEB_ROOT = os.path.join(os.path.dirname(__file__), "web-frontend")
+ACCOUNT_SERVICE_URL = "http://10.40.32.106:8102/api/demo"
+
+
+class AppGatewayHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/api/accounts":
+            self.proxy_accounts()
+            return
+
+        return super().do_GET()
+
+    def proxy_accounts(self):
+        try:
+            request = Request(ACCOUNT_SERVICE_URL, headers={"Accept": "application/json"})
+            with urlopen(request, timeout=5) as response:
+                body = response.read()
+                status = response.status
+
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        except HTTPError as exc:
+            self.send_json({
+                "status": "upstream_http_error",
+                "error": str(exc),
+                "upstream": ACCOUNT_SERVICE_URL
+            }, status=502)
+
+        except URLError as exc:
+            self.send_json({
+                "status": "upstream_connection_error",
+                "error": str(exc),
+                "upstream": ACCOUNT_SERVICE_URL
+PY  server.serve_forever()accounts to: {ACCOUNT_SERVICE_URL}")
+sh-5.2$ sudo nohup python3 ~/bank-lab/app_gateway.py > ~/app_gateway.log 2>&1 &
+[1] 46804
+sh-5.2$ sudo ss -tulnp | grep :80
+tcp   LISTEN 0      5                              0.0.0.0:80        0.0.0.0:*    users:(("python3",pid=46865,fd=3))
+sh-5.2$ curl http://localhost
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex National Bank | Enterprise Platform</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="lab-banner">Fictional bank demo for AWS architecture training. Not affiliated with Chase, First Bank, or any real financial institution.</div>
+  <nav class="navbar">
+  <a class="brand" href="index.html"><span class="brand-badge">A</span>Apex National Bank</a>
+  <div class="nav-links">
+    <a href="personal.html">Personal</a>
+    <a href="business.html">Business</a>
+    <a href="cards.html">Cards</a>
+    <a href="loans.html">Loans</a>
+    <a href="security.html">Security</a>
+    <a href="support.html">Support</a>
+    <a class="login" href="staff-portal-placeholder.html">Staff Portal</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div>
+    <div class="eyebrow">Production-style banking architecture lab</div>
+    <h1>Enterprise banking platform with private backend services.</h1>
+    <p>This frontend represents the public customer experience. The real banking engine sits behind it: auth, accounts, transfers, fraud/risk, notifications,reports, database, cache, logging, and backups.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="architecture.html">View Architecture</a>
+      <a class="btn btn-outline" href="services.html">Explore Private Services</a>
+    </div>
+  </div>
+  <div class="glass-card">
+    <small>Demo Customer Snapshot</small>
+    <div class="balance">$84,290.18</div>
+    <div class="kpi-grid">
+      <div class="kpi"><small>Auth</small><strong>Private</strong></div>
+      <div class="kpi"><small>Fraud</small><strong>Active</strong></div>
+      <div class="kpi"><small>Database</small><strong>RDS</strong></div>
+      <div class="kpi"><small>Cache</small><strong>Redis</strong></div>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-title">
+    <span class="eyebrow">What the user sees</span>
+    <h2>Many public pages. Private systems behind them.</h2>
+    <p>A bank may expose many customer pages, but balances, transfers, KYC, fraud review, and reporting should be handled by private services.</p>
+  </div>
+  <div class="grid-4">
+    <div class="card"><div class="icon">👤</div><h3>Personal Banking</h3><p>Checking, savings, transfers, statements, and profile workflows.</p></div>
+    <div class="card"><div class="icon">🏢</div><h3>Business Banking</h3><p>Payroll, treasury, approvals, supplier payments, and audit exports.</p></div>
+    <div class="card"><div class="icon">💳</div><h3>Cards</h3><p>Card controls, disputes, limits, fraud flags, and card replacement.</p></div>
+    <div class="card"><div class="icon">🛡️</div><h3>Risk & Security</h3><p>MFA, session control, fraud checks, logs, and compliance evidence.</p></div>
+  </div>
+</section>
+<section class="arch-band">
+  <div>
+    <h2>The frontend is public. The banking engine is private.</h2>
+    <p>In a realistic AWS design, users reach an ALB. The ALB routes to private app servers. Those app servers call private services and private databases. Customers never directly reach the backend.</p>
+  </div>
+  <div class="flow-panel">
+    <h3>Request flow</h3>
+    <div class="flow-row">1. Customer → Route 53 → CloudFront/WAF → ALB</div>
+    <div class="flow-row">2. ALB → Private web/app servers</div>
+    <div class="flow-row">3. App servers → Auth, Account, Transfer, Fraud services</div>
+    <div class="flow-row">4. Services → RDS, Redis, S3, CloudWatch</div>
+  </div>
+</section>
+
+  <footer>
+  <div>© 2026 Apex National Bank Demo — AWS Cloud Engineering Lab</div>
+  <div>ALB • Private App Servers • Private Services • RDS • Redis • S3 • CloudWatch</div>
+</footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>s
